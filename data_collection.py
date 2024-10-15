@@ -6,6 +6,7 @@ import torch
 class DialogueDataset(Dataset):
     def __init__(self, datasets, dataset_labels, tokenizer):
         self.data = []
+        longest = 0
         for dataset, dataset_label in zip(datasets, dataset_labels):
             for item in dataset:                
                 categories = ','.join(item["categories"]) + "," + dataset_label
@@ -13,13 +14,14 @@ class DialogueDataset(Dataset):
                 conversations = '\n'.join([line["content"] for line in item["conversation"]])
 
                 tokens = tokenizer.encode(categories + "<|endoftext|>" + personalities + "<|endoftext|>" + conversations)
+                
+                longest = max(longest, len(tokens))
 
-                self.data.append(tokens)
+                self.data.append(torch.tensor(tokens))
         
-        longest = max([len(seq) for seq in self.data])
+        pad_token = tokenizer.encode(" ")
         for index in range(len(self.data)):
-            self.data[index].extend([tokenizer.pad_token] * (longest - len(self.data[index])))
-            self.data[index] = torch.tensor(self.data[index])
+            self.data[index] = torch.cat((self.data[index], torch.tensor(pad_token * (longest - len(self.data[index])))))
 
 
     def __len__(self):
