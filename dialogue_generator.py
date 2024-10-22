@@ -1,20 +1,24 @@
 import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, StoppingCriteria
 import logging
+import pickle
 
 
 class DialogueGenerator:
     def __init__(self):
+        logging.getLogger('transformers').setLevel(logging.ERROR)
+
         self.dialogue_model = GPT2LMHeadModel.from_pretrained("gpt2")
-        self.tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        pretrained_state_dict = pickle.load(open("dialogue_model.p", "rb"))["state_dict"]
+        self.dialogue_model.load_state_dict(pretrained_state_dict)
+
+        self.tokenizer = GPT2Tokenizer.from_pretrained("gpt2", clean_up_tokenization_spaces = False)
 
         self.stopping_criteria = [DialogueStoppingCriteria(self.tokenizer)]
 
         self.sep_token1 = self.tokenizer.encode(",")[0]
         self.sep_token2 = self.tokenizer.encode("<|endoftext|>")[0]
         self.sep_token3 = self.tokenizer.encode("\n")[0]
-
-        logging.getLogger('transformers').setLevel(logging.ERROR)
 
 
     def generate_dialogue(self, temp):
@@ -23,9 +27,9 @@ class DialogueGenerator:
         while True:
             tokens = self._generate_tokens(model_input, temp)
             npc_response = tokens[:, input_length:]
-            print(self.tokenizer.batch_decode(npc_response)[0])
+            print(f" NPC response: {self.tokenizer.batch_decode(npc_response)[0].strip()}")
 
-            response = input("Your response ('exit' to quit): ")
+            response = input("Your response: ")
             if response == "exit":
                 break
         
