@@ -21,7 +21,7 @@ class DialogueDataset(Dataset):
         
         pad_token = tokenizer.encode(" ")
         for index in range(len(self.data)):
-            self.data[index] = torch.cat((self.data[index], torch.tensor(pad_token * (longest - len(self.data[index])))))
+            self.data[index] = torch.cat((self.data[index], torch.tensor(pad_token * (longest - len(self.data[index]))))).long()
 
 
     def __len__(self):
